@@ -1,50 +1,50 @@
-# Welcome to your Expo app 👋
+# Business Listing & Discovery
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A small React Native app for creating and browsing local business listings. Built with Expo, TypeScript, and Expo Router.
 
-## Get started
+## Running it
 
-1. Install dependencies
-
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+You'll need Node 18 or newer and the Expo Go app on your phone.
 
 ```bash
-npm run reset-project
+git clone https://github.com/OmedHossaini/listing-discovery.git
+cd listing-discovery
+npm install
+npx expo start
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Scan the QR code with Expo Go on iOS or Android. Tested on iOS with Expo Go SDK 54.
 
-## Learn more
+## What it does
 
-To learn more about developing your project with Expo, look at the following resources:
+Create a listing with a name, category, and short description. Browse everything you've added in a scrollable list, newest first. Filter by business name as you type. Listings stay on the device between launches.
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## Decisions
 
-## Join the community
+**State management.** I used React Context with `useState` instead of Redux or Zustand. There's one piece of shared state (the array of listings) and two screens that need it. The form writes to it and the list reads from it. Redux would mean adding a store, actions, and reducers to solve a problem I don't have yet. I'd switch to it once there are several unrelated slices of state, or once updates get complicated enough that a reducer actually makes them easier to follow.
 
-Join our community of developers creating universal apps.
+**Persistence.** The brief allowed in-memory state, but I went with AsyncStorage. Listings vanishing on every restart makes the app hard to actually use, and it only took about fifteen lines. The store reads once when it mounts and writes whenever the array changes. One detail worth calling out, the write is guarded by an `isLoading` flag. Without it, the initial empty array saves over whatever was on disk before the read has finished.
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+I picked AsyncStorage over SQLite because the data is a flat array with no queries or relations. SQLite would make sense once filtering needs to happen at the database level, or once the dataset gets too big to hold in memory.
+
+**Project structure.** Anything in `app/` is a route, since Expo Router turns each file into a URL. I kept those as one line re-exports and put the real screens in `src/screens/`, so the routing stays separate from the implementation. It also means I can move or reuse a screen without touching the routes.
+
+**Filtering.** `filterBusinesses` is a pure function in its own file, so it takes an array and a query and gives back an array without needing anything rendered to test it. The filtered list is worked out during render rather than stored in state, since storing it would mean keeping two arrays in sync every time a listing is added.
+
+**UI choices.** The save button stays disabled until there's a name, so the form can't be submitted into a broken state. The empty list says what to do next rather than just sitting blank, and it says something different when a search returns nothing, so the user can tell "you have no listings" apart from "nothing matched." There's a spinner while storage is being read, since a flash of the empty state would look like the data was lost. Category is four tappable chips instead of a dropdown, because on mobile that's one tap instead of three and the options are all visible at once.
+
+## Trade-offs
+
+No edit or delete. The store already owns the array so both would be small additions, but neither was in the brief and I kept the scope where it was asked.
+
+No tests. `filterBusinesses` is the one piece with real logic, and I wrote it so it could be tested, but setting up a test runner wasn't the best use of the time I had.
+
+Validation is minimal. The save button stays disabled until there's a name, and that's it. The brief said no advanced validation was needed.
+
+Categories are a fixed list of four in code. That's fine for a slice this size, but a real version would need them to come from somewhere they can be edited.
+
+## v2
+
+Edit and delete on each listing, plus using category as a filter rather than just something displayed on the card.
+
+A backend, at which point the store turns into a data fetching layer and local storage becomes an offline fallback.
