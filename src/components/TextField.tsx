@@ -18,6 +18,7 @@ export default function TextField({ label, value, onChangeText, placeholder, mul
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
+        placeholderTextColor={colors.muted}
         multiline={multiline}
         textAlignVertical={multiline ? 'top' : 'center'}
       />
